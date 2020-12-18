@@ -1,0 +1,49 @@
+import sys
+from argparse import ArgumentParser
+from pathlib import Path
+
+from PyQt5.QtWidgets import QMainWindow, QApplication
+
+from tb_lattice_viewer.mainwidow import App
+from tb_lattice_viewer import __version__
+from tb_lattice_viewer.presets import PresetsManager
+import os
+
+
+class MainWindow(QMainWindow):
+    def __init__(self, title: str):
+        super(MainWindow, self).__init__()
+        self.app = App()
+        self.setWindowTitle(f"Lattice Generator ({__version__}) - {title}")
+        self.setCentralWidget(self.app)
+
+
+if __name__ == "__main__":
+
+    parser = ArgumentParser(description="Run lattice-viewer")
+    parser.add_argument(
+        "--config",
+        default=Path("~/.tb-lattice-viewer/default.json"),
+        help="Path to presets json file e.g. my-presets.json",
+    )
+
+    args = parser.parse_args()
+    config = Path(args.config).expanduser()
+
+    if not config.with_suffix(".json"):
+        print(
+            f"Invalid argument: config - should be a path to file "
+            f"with extension .json, but got: '{config}'"
+        )
+        sys.exit(-1)
+
+    if not config.exists():
+        config.parent.mkdir(parents=True, exist_ok=True)
+
+    sys.path.append(os.getcwd())
+
+    app = QApplication([])
+    PresetsManager.load(config)
+    win = MainWindow(config)
+    win.show()
+    sys.exit(app.exec_())
